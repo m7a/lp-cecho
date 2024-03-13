@@ -42,9 +42,9 @@ License: BSD-2-Clause
 </property>
 
 <property name="mdpc.file.install">
-cecho-0.6.0/_build/default/lib/cecho/ebin /usr/lib/erlang/lib/cecho-0.6.0/ebin
-cecho-0.6.0/priv /usr/lib/erlang/lib/cecho-0.6.0/priv
-cecho-0.6.0/include /usr/lib/erlang/lib/cecho-0.6.0/include
+cecho-0.6.0/_build/default/lib/cecho/ebin /usr/lib/erlang/lib/cecho-0.6.0
+cecho-0.6.0/priv /usr/lib/erlang/lib/cecho-0.6.0
+cecho-0.6.0/include /usr/lib/erlang/lib/cecho-0.6.0
 </property>
 
 <!-- PART OF TPL HERE FOR USE IN BUILD -->
