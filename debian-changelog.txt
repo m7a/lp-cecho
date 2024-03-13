@@ -1,3 +1,9 @@
+mdvl-cecho (1.0.2) stable; urgency=medium
+
+  * Install source code alongside binaries
+
+ -- Ma_Sys.ma Linux-Fan <info@masysma.net>  Wed, 13 Mar 2024 18:45:09 +0100
+
 mdvl-cecho (1.0.1) stable; urgency=medium
 
   * Fix installation paths
