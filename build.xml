@@ -7,6 +7,7 @@
 <property name="mdpc.section"    value="interpreters"/>
 <property name="mdpc.descrs"     value="An ncurses library for Erlang"/>
 <property name="mdpc.arch"       value="any"/>
+<property name="mdpc.bdep"       value="rebar3"/>
 <property name="mdpc.descrl">
  Cecho is an ncurses library for Erlang which enabled Erlang applications to
  create terminal based GUIs. It aims to have an API as close as possible to the
