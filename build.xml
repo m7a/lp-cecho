@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="build">
+
+<!-- APPLICATION METADATA -->
+<property name="masysma.target"  value="cecho"/> 
+<property name="mdpc.name"       value="mdvl-cecho"/>
+<property name="mdpc.section"    value="interpreters"/>
+<property name="mdpc.descrs"     value="An ncurses library for Erlang"/>
+<property name="mdpc.arch"       value="any"/>
+<property name="mdpc.descrl">
+ Cecho is an ncurses library for Erlang which enabled Erlang applications to
+ create terminal based GUIs. It aims to have an API as close as possible to the
+ original API of ncurses so that a person familiar with ncurses API should be
+ able to immediately use it without any introduction..
+</property>
+<property name="mdpc.copyright" value="Copyright (c) 2017 Mazen Harake"/>
+<property name="mdpc.lblock">
+License: BSD-2-Clause
+ All rights reserved.
+ .
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+     * Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+</property>
+
+<property name="mdpc.file.install">
+cecho-0.6.0/_build/default/lib/cecho/ebin /usr/lib/erlang/lib/cecho-0.6.0/ebin
+cecho-0.6.0/priv /usr/lib/erlang/lib/cecho-0.6.0/priv
+cecho-0.6.0/include /usr/lib/erlang/lib/cecho-0.6.0/include
+</property>
+
+<!-- PART OF TPL HERE FOR USE IN BUILD -->
+<property environment="env"/>
+<condition property="masysma.internal.includepath.rel" value="${env.MDVL_CI_PHOENIX_ROOT}" else=".."><isset property="env.MDVL_CI_PHOENIX_ROOT"/></condition>
+<property name="masysma.internal.includepath" location="${masysma.internal.includepath.rel}"/>
+
+<!-- SPECIFIC BUILD -->
+<target name="download">
+	<masysma_require_artifact
+			masysmaartifact="cecho.git"
+			masysmaatarget="cecho-0.6.0"
+			masysmaadef="https://github.com/mazenharake/cecho.git"/>
+</target>
+
+<target name="build" depends="download">
+	<exec executable="rebar3" dir="cecho-0.6.0" failonerror="true">
+		<arg value="compile"/>
+	</exec>
+</target>
+
+<target name="clean"><delete dir="cecho-0.6.0"/></target>
+
+<!-- CI INTEGRATION -->
+<target name="autoci" depends="autopackage"/>
+
+<!-- TPL IMPORT (PARTIALLY GIVEN ABOVE) -->
+<property name="masysma.internal.loadpath" value="${masysma.internal.includepath}/co-build/ant-build-template.xml"/>
+<condition property="masysma.internal.load" value="file://${masysma.internal.loadpath}" else="https://raw.githubusercontent.com/m7a/co-build/master/ant-build-template.xml"><resourceexists><file file="${masysma.internal.loadpath}"/></resourceexists></condition>
+<import><url url="${masysma.internal.load}"/></import>
+
+</project>
