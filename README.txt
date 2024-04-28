@@ -1,2 +1,5 @@
-Note that this still implicitly downloads the “port compiler”. Should consider
-fixing that... <https://github.com/blt/port_compiler/pulls>
+MDVL Build Instructions for cecho <https://github.com/mazenharake/cecho>.
+
+Build a Debian package for this tool as follows:
+
+	$ ant package
