@@ -1,0 +1,61 @@
+From e2cd6ea5821976a2b651cb6a6ff658920580be6b Mon Sep 17 00:00:00 2001
+From: "Linux-Fan, Ma_Sys.ma" <Ma_Sys.ma@web.de>
+Date: Sun, 25 Aug 2024 15:33:30 +0200
+Subject: [PATCH] Enable support for SIGWINCH reporting through ceKEY_RESIZE
+
+Previously, window resizing was reported to the applications through the opaque
+key code 410. Also, occasionally, the reported window size was wrong.
+
+This commit attempts to fix this by adding a new constant `ceKEY_RESIZE` to
+detect the virtual key reported by NCurses for resize events. Also, the code
+is extended to explicitly query the current window size via `ioctl`.
+---
+ c_src/cecho.c     | 14 +++++++++++++-
+ include/cecho.hrl |  2 +-
+ 2 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/c_src/cecho.c b/c_src/cecho.c
+index 9dbc22e..81599a0 100644
+--- a/c_src/cecho.c
++++ b/c_src/cecho.c
+@@ -27,6 +27,7 @@
+ // Includes
+ #include <stdlib.h>
+ #include <string.h>
++#include <sys/ioctl.h>
+ #include "cecho.h"
+ #include "cecho_commands.h"
+ #include "erl_driver.h"
+@@ -296,7 +297,18 @@ void do_getmaxyx(state *st) {
+   long slot;
+   int x, y;
+   ei_decode_long(st->args, &(st->index), &slot);
+-  getmaxyx(st->win[slot], y, x);
++  if (slot == 0) {
++    struct winsize w;
++    int rc = ioctl(0, TIOCGWINSZ, &w);
++    if (rc == 0) {
++      y = w.ws_row;
++      x = w.ws_col;
++    } else {
++      getmaxyx(st->win[slot], y, x);
++    }
++  } else {
++    getmaxyx(st->win[slot], y, x);
++  }
+   tuple(&(st->eixb), 2);
+   integer(&(st->eixb), y);
+   integer(&(st->eixb), x);
+diff --git a/include/cecho.hrl b/include/cecho.hrl
+index d56d2c0..21a5148 100644
+--- a/include/cecho.hrl
++++ b/include/cecho.hrl
+@@ -99,4 +99,4 @@
+ -define(ceKEY_PGUP, 339).
+ -define(ceKEY_END, 360).
+ 
+-
++-define(ceKEY_RESIZE, 410).
+-- 
+2.39.2
+
