@@ -7,7 +7,8 @@
 <property name="mdpc.section"    value="interpreters"/>
 <property name="mdpc.descrs"     value="An ncurses library for Erlang"/>
 <property name="mdpc.arch"       value="any"/>
-<property name="mdpc.bdep"       value="rebar3"/>
+<property name="mdpc.bdep"
+		>rebar3, debhelper-compat (= 13), config-package-dev</property>
 <property name="mdpc.descrl">
  Cecho is an ncurses library for Erlang which enabled Erlang applications to
  create terminal based GUIs. It aims to have an API as close as possible to the
@@ -63,6 +64,9 @@ cecho-0.6.0/src /usr/lib/erlang/lib/cecho-0.6.0
 
 <target name="build" depends="download">
 	<exec executable="git" dir="cecho-0.6.0" failonerror="true">
+		<env key="GIT_COMMITTER_NAME"  value="CI"/>
+		<env key="GIT_COMMITTER_EMAIL" value="info@masysma.net"/>
+		<env key="EMAIL"               value="info@masysma.net"/>
 		<arg value="am"/>
 		<arg value="--ignore-space-change"/>
 		<arg value="../0001-Make-string-handling-unicode-preserving.patch"/>
