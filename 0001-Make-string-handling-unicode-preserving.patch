@@ -1,0 +1,145 @@
+From 088d619d48c20b014c70141d92e2ffda780a5809 Mon Sep 17 00:00:00 2001
+From: "Linux-Fan, Ma_Sys.ma" <Ma_Sys.ma@web.de>
+Date: Fri, 5 Apr 2024 19:22:49 +0200
+Subject: [PATCH] Make string handling unicode-preserving
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Previously, it was impossible to output non-ASCII characters using cecho for
+multiple reasons:
+
+ * Strings were processed as flattened lists.
+   This caused encoding information to not be preserved properly.
+ * Data was transmitted as string from the Erlang to the C side causing
+   encoding information not to arrive correctly.
+ * The library linked against libncurses rather than libncursesw and as
+   a result, no “wide character” support was available.
+
+This commit fixes this by switching the string handling to be based on iolists
+and binaries. String values are transferred to the C-side as binaries rather
+than strings now.
+
+Additionally, upon compilation, the C part is linked against `libncursesw` in
+favor of the previously chosen `libncurses`.
+
+The API remains compatible with preceding invocations and still allows strings
+to be passed to all of the string functions.
+---
+ c_src/cecho.c |  8 ++++----
+ rebar.config  |  2 +-
+ src/cecho.erl | 26 ++++++++++++--------------
+ 3 files changed, 17 insertions(+), 19 deletions(-)
+
+diff --git a/c_src/cecho.c b/c_src/cecho.c
+index 9dbc22e..111b4ae 100644
+--- a/c_src/cecho.c
++++ b/c_src/cecho.c
+@@ -267,7 +267,7 @@ void do_addstr(state *st) {
+       encode_ok_reply(st, ENOMEM);
+       return;
+   }
+-  ei_decode_string(st->args, &(st->index), str);
++  ei_decode_binary(st->args, &(st->index), str, &strlen);
+   code = addnstr(str, strlen);
+   free(str);
+   encode_ok_reply(st, code);
+@@ -393,7 +393,7 @@ void do_mvaddstr(state *st) {
+       encode_ok_reply(st, ENOMEM);
+       return;
+   }
+-  ei_decode_string(st->args, &(st->index), str);
++  ei_decode_binary(st->args, &(st->index), str, &strlen);
+   code = mvaddnstr((int)y, (int)x, str, (int)strlen);
+   free(str);
+   encode_ok_reply(st, code);
+@@ -452,7 +452,7 @@ void do_waddstr(state *st) {
+       encode_ok_reply(st, ENOMEM);
+       return;
+   }
+-  ei_decode_string(st->args, &(st->index), str);
++  ei_decode_binary(st->args, &(st->index), str, &strlen);
+   code = waddnstr(st->win[slot], str, strlen);
+   free(str);
+   encode_ok_reply(st, code);
+@@ -482,7 +482,7 @@ void do_mvwaddstr(state *st) {
+       encode_ok_reply(st, ENOMEM);
+       return;
+   }
+-  ei_decode_string(st->args, &(st->index), str);
++  ei_decode_binary(st->args, &(st->index), str, &strlen);
+   code = mvwaddnstr(st->win[slot], (int)y, (int)x, str, strlen);
+   free(str);
+   encode_ok_reply(st, code);
+diff --git a/rebar.config b/rebar.config
+index f0ad773..916c157 100644
+--- a/rebar.config
++++ b/rebar.config
+@@ -8,7 +8,7 @@
+           ]}.
+ {port_specs, [{"priv/cecho.so", ["c_src/cecho.c"]}]}.
+ {port_env, [
+-             {"DRV_LDFLAGS", "$DRV_LDFLAGS -lncurses"}
++             {"DRV_LDFLAGS", "$DRV_LDFLAGS -lncursesw"}
+             ]
+ }.
+ {so_name, "cecho.so"}.
+diff --git a/src/cecho.erl b/src/cecho.erl
+index e9b130e..8b41ee3 100644
+--- a/src/cecho.erl
++++ b/src/cecho.erl
+@@ -67,9 +67,9 @@ noecho() ->
+ addch(Char) when is_integer(Char) ->
+     call(?ADDCH, Char).
+ 
+-addstr(String) when is_list(String) ->
+-    Str = lists:flatten(String),
+-    call(?ADDSTR, {erlang:iolist_size(Str), Str}).
++addstr(String) ->
++    Str = iolist_to_binary(String),
++    call(?ADDSTR, {byte_size(Str), Str}).
+ 
+ move(Y, X) when is_integer(X) andalso is_integer(Y) ->
+     call(?MOVE, {Y, X}).
+@@ -130,10 +130,9 @@ mvaddch(Y, X, Char) when is_integer(Char) andalso is_integer(X)
+ 			 andalso is_integer(Y) ->
+     call(?MVADDCH, {Y, X, Char}).
+ 
+-mvaddstr(Y, X, String) when is_list(String) andalso is_integer(X) andalso 
+-			    is_integer(Y) ->
+-    Str = lists:flatten(String),
+-    call(?MVADDSTR, {Y, X, erlang:iolist_size(Str), Str}).
++mvaddstr(Y, X, String) when is_integer(X) andalso is_integer(Y) ->
++    Str = iolist_to_binary(String),
++    call(?MVADDSTR, {Y, X, byte_size(Str), Str}).
+ 
+ newwin(Height, Width, StartY, StartX) when is_integer(Height) andalso 
+ 					   is_integer(Width) andalso 
+@@ -148,18 +147,17 @@ wmove(Window, Y, X) when is_integer(Window) andalso is_integer(Y) andalso
+ 			 is_integer(X) ->
+     call(?WMOVE, {Window, Y, X}).
+ 
+-waddstr(Window, String) when is_integer(Window) andalso is_list(String) ->
+-    Str = lists:flatten(String),
+-    call(?WADDSTR, {Window, erlang:iolist_size(Str), Str}).
++waddstr(Window, String) when is_integer(Window) ->
++    Str = iolist_to_binary(String),
++    call(?WADDSTR, {Window, byte_size(Str), Str}).
+ 
+ waddch(Window, Char) when is_integer(Window) andalso is_integer(Char) ->
+     call(?WADDCH, {Window, Char}).
+ 
+ mvwaddstr(Window, Y, X, String) when is_integer(Window) andalso is_integer(Y)
+-				     andalso is_integer(X) andalso 
+-				     is_list(String) ->
+-    Str = lists:flatten(String),
+-    call(?MVWADDSTR, {Window, Y, X, erlang:iolist_size(Str), Str}).
++				     andalso is_integer(X) ->
++    Str = iolist_to_binary(String),
++    call(?MVWADDSTR, {Window, Y, X, byte_size(Str), Str}).
+ 
+ mvwaddch(Window, Y, X, Char) when is_integer(Window) andalso is_integer(Y)
+                                   andalso is_integer(X) ->
+-- 
+2.39.2
+

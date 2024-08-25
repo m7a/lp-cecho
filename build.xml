@@ -62,6 +62,11 @@ cecho-0.6.0/src /usr/lib/erlang/lib/cecho-0.6.0
 </target>
 
 <target name="build" depends="download">
+	<exec executable="git" dir="cecho-0.6.0" failonerror="true">
+		<arg value="am"/>
+		<arg value="--ignore-space-change"/>
+		<arg value="../0001-Make-string-handling-unicode-preserving.patch"/>
+	</exec>
 	<exec executable="rebar3" dir="cecho-0.6.0" failonerror="true">
 		<arg value="compile"/>
 	</exec>
